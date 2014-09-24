@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe "Authentication" do
-  
+
   subject { page }
 
   describe "signin page" do
@@ -12,24 +12,27 @@ describe "Authentication" do
   end
 
   describe "signin" do
-    
     before { visit signin_path }
 
     describe "with invalid information" do
       before { click_button "Sign in" }
 
       it { should have_title('Sign in') }
-      it { should have_selector('div.alert.alert-error') }
+      it { should have_error_message('Invalid') }
 
       describe "after visiting another page" do
         before { click_link "Home" }
-         it { should_not have_selector('div.alert.alert-error') }
+        it { should_not have_selector('div.alert.alert-error') }
       end
     end
 
     describe "with valid information" do
       let(:user) { FactoryGirl.create(:user) }
-      before { sign_in user }
+      before do
+        fill_in "Email",    with: user.email.upcase
+        fill_in "Password", with: user.password
+        click_button "Sign in"
+      end
 
       it { should have_title(user.name) }
       it { should have_link('Users',       href: users_path) }
@@ -64,7 +67,7 @@ describe "Authentication" do
             expect(page).to have_title('Edit user')
           end
         end
-      end     
+      end
 
       describe "in the Users controller" do
 
@@ -81,6 +84,19 @@ describe "Authentication" do
         describe "visiting the user index" do
           before { visit users_path }
           it { should have_title('Sign in') }
+        end
+      end
+
+      describe "in the Microposts controller" do
+
+        describe "submitting to the create action" do
+          before { post microposts_path }
+          specify { expect(response).to redirect_to(signin_path) }
+        end
+
+        describe "submitting to the destroy action" do
+          before { delete micropost_path(FactoryGirl.create(:micropost)) }
+          specify { expect(response).to redirect_to(signin_path) }
         end
       end
     end
